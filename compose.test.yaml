@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: stockoo_demo
+      POSTGRES_USER: demo
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "127.0.0.1:55433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U demo -d stockoo_demo"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
