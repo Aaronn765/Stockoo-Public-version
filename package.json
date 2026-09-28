@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": false,
   "type": "module",
-  "description": "Sanitized multi-tenant inventory transaction case study",
+  "description": "Public engineering edition of a multi-store inventory SaaS with atomic PostgreSQL sales, tenant isolation and stock history",
   "engines": {
     "node": ">=22"
   },
