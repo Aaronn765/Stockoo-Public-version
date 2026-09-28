@@ -1,70 +1,126 @@
-# Stockoo Public version
+# Stockoo — Multi-store Inventory & Cash Management SaaS
 
-A sanitized engineering case study for a multi-store inventory and cash-management SaaS built within ODX Technologies.
+[![CI](https://github.com/Aaronn765/Stockoo-Public-version/actions/workflows/ci.yml/badge.svg)](https://github.com/Aaronn765/Stockoo-Public-version/actions/workflows/ci.yml)
 
-**Author:** TOUVOLI BALLO STEVE AARON · Software engineering, JUNIA ISEN Lille
+Stockoo is a full-stack **multi-store inventory and cash-management SaaS** designed for small retail and wholesale businesses.
+
+The platform centralizes products, purchases, sales, stock levels, cash movements, receipts, employees and store activity. One organization can operate several stores while keeping owner and employee permissions scoped to the right business data.
+
+**Author:** TOUVOLI BALLO STEVE AARON · Software Engineering, JUNIA ISEN Lille
 
 [Version française](README.fr.md)
 
-## Product and contribution
+## Product overview
 
-Stockoo helps small retail and wholesale teams manage products, purchases, sales, stock levels, cash movements, receipts, employees, and store activity. One organization can contain multiple stores, with owner and employee access scoped to the relevant business data.
+Stockoo is built around a simple operational problem: a business needs to know what it owns, what it sold, what it purchased, who performed each operation and what happened to its stock and cash.
 
-My work covered the product and its end-to-end implementation: the Next.js application, TypeScript business flows, Supabase/PostgreSQL data model, access policies, purchase and sale transactions, file handling, and role-based test scenarios.
+The production application includes:
 
-The private application uses Next.js App Router, TypeScript, React, Tailwind CSS, Supabase Auth, PostgreSQL with Row Level Security, Supabase Storage, and SWR. Its purchase and sale forms call PostgreSQL functions through Supabase RPC. This repository reimplements a narrow, runnable slice using TypeScript and PostgreSQL so the stock transaction can be tested locally without production accounts or a hosted Supabase project.
+- multi-store organization management;
+- product and category management;
+- purchase and sale workflows;
+- stock tracking and movement history;
+- cash management;
+- employee access and store assignment;
+- activity history;
+- receipt/file handling;
+- authentication and onboarding;
+- payment-related flows.
 
-## The engineering problem
+## My contribution
 
-A sale must not oversell stock when two employees act at the same time. The public reference transaction:
+I worked on the application end to end: Next.js pages and components, TypeScript business flows, Supabase/PostgreSQL data modeling, access rules, transactional purchase and sale operations, file handling and role-based scenarios.
 
-1. Resolves the authenticated actor's store access.
-2. Locks the store's product rows in stable ID order.
-3. Checks every line against current stock before inserting a sale.
-4. Writes the sale, line snapshots, product balances, and stock movements in one transaction.
-5. Rolls the whole operation back if any product is unavailable.
-
-The demo also tests that one tenant cannot mutate another tenant's store and that product-name snapshots remain readable after a product is removed.
+The production stack includes **Next.js App Router, TypeScript, React, Tailwind CSS, Supabase Auth, PostgreSQL, Row Level Security, Supabase Storage and SWR**.
 
 ## Architecture
 
 ~~~mermaid
 flowchart LR
-  U[Owner or employee] --> W[Next.js web app]
-  W --> S[Supabase Auth session]
-  W --> R[Supabase RPC and table queries]
+  U[Owner or employee] --> W[Next.js Web App]
+  W --> A[Supabase Auth]
+  W --> R[RPC & data access]
   R --> P[(PostgreSQL)]
   P --> L[Row Level Security]
-  P --> T[Atomic purchase and sale functions]
-  T --> M[Stock and cash movement history]
-  W --> F[Private receipt storage]
+  P --> T[Atomic purchase & sale functions]
+  T --> M[Stock & cash movement history]
+  W --> F[Private file storage]
 ~~~
 
-The diagram describes the private application's boundaries. The executable reference in this repository is smaller and uses a local PostgreSQL adapter for reproducible tests.
+## Engineering highlights
 
-## Run the reference implementation
+### Atomic sales
+
+A sale must update several pieces of state together: sale record, sale lines, product quantities and stock-movement history.
+
+These writes therefore happen inside a single PostgreSQL transaction. If one product is unavailable, the entire operation is rolled back.
+
+### Concurrency and overselling protection
+
+Two employees may sell the same product at nearly the same time.
+
+The public implementation locks product rows with `FOR UPDATE` before checking and decrementing stock. The integration test deliberately starts competing sales and verifies that PostgreSQL accepts only the operation that available inventory can support.
+
+### Multi-tenant access
+
+An organization may contain several stores and users.
+
+The transaction verifies that the authenticated actor actually belongs to the organization or store before allowing a mutation. The production application also uses PostgreSQL Row Level Security through Supabase.
+
+### Historical snapshots
+
+Historical records should stay understandable even if a product is later renamed or deleted.
+
+Sale lines and stock movements therefore keep snapshots of important product information such as the name and unit at the time of the operation.
+
+## What this public repository contains
+
+The complete production application remains private.
+
+This repository provides a focused, runnable implementation of representative backend mechanisms:
+
+- TypeScript inventory-domain logic;
+- atomic PostgreSQL sales;
+- row locking and overselling prevention;
+- tenant/store authorization checks;
+- historical product snapshots;
+- stock-movement history;
+- a Supabase RLS policy reference;
+- unit, type and PostgreSQL integration tests.
+
+Production customer records, uploaded receipts, payment-provider implementation details, secrets and private deployment configuration are excluded.
+
+## Run the project
 
 Requires Node.js 22 or later.
 
-~~~sh
+~~~bash
 npm install
 npm run typecheck
 npm test
 ~~~
 
-PowerShell, for the real PostgreSQL concurrency test:
+For the PostgreSQL integration tests:
 
-~~~powershell
+~~~bash
 docker compose -f compose.test.yaml up -d --wait
-$env:STOCKOO_TEST_DATABASE_URL = 'postgres://demo@127.0.0.1:55433/stockoo_demo'
-npm run test:postgres
-Remove-Item Env:STOCKOO_TEST_DATABASE_URL
-docker compose -f compose.test.yaml down
 ~~~
 
-The integration suite is skipped when the test URL is absent. Read [testing notes](docs/security-and-testing.md) before choosing a database.
+Then set:
 
-## Design notes
+~~~text
+STOCKOO_TEST_DATABASE_URL=postgres://demo@127.0.0.1:55433/stockoo_demo
+~~~
+
+and run:
+
+~~~bash
+npm run test:postgres
+~~~
+
+The CI workflow automatically runs the TypeScript check, unit tests and PostgreSQL integration tests.
+
+## Technical documentation
 
 - [Architecture and source boundaries](docs/architecture.md)
 - [Multi-tenant access model](docs/multi-tenancy.md)
@@ -72,7 +128,13 @@ The integration suite is skipped when the test URL is absent. Read [testing note
 - [Historical snapshots and data model](docs/data-model.md)
 - [Security scope and verification](docs/security-and-testing.md)
 
+## Technology
+
+**Frontend:** Next.js, React, TypeScript, Tailwind CSS  
+**Backend & data:** Supabase, PostgreSQL, RPC, Row Level Security  
+**Storage & auth:** Supabase Storage, Supabase Auth  
+**Testing:** TypeScript compiler, Node.js Test Runner, PostgreSQL integration tests
+
 ## Public scope
 
-An optional Supabase-only RLS policy example is in <code>db/supabase-rls-reference.sql</code>; local tests do not apply it.
-This repository starts from a clean Git history and uses synthetic organizations, products, and quantities. It does not include customer or store records, uploaded receipts, payment-provider code, production environment values, private deployment configuration, or copied internal planning documents. It is a technical case study, not a deployable edition of Stockoo and not a security certification.
+This repository is a technical public edition of Stockoo rather than a deployable copy of the production service. It contains synthetic data and isolated implementations intended to demonstrate the core software-engineering decisions behind the product.
