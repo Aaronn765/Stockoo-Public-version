@@ -10,6 +10,28 @@ The platform centralizes products, purchases, sales, stock levels, cash movement
 
 [Version française](README.fr.md)
 
+
+## Engineering portfolio | Quick review
+
+**Role:** Full-stack engineering, data modelling, access control and transactional inventory workflows.  
+**Live application:** [Stockoo](https://stockoo.vercel.app/) | **Public, runnable case study:** this repository.
+
+| Engineering problem | Evidence in this repository |
+| --- | --- |
+| Avoid overselling under concurrent operations | [Atomic stock transactions](docs/inventory-transactions.md) and PostgreSQL row locking |
+| Enforce boundaries between stores and organizations | [Multi-tenant authorization model](docs/multi-tenancy.md) and RLS policy reference |
+| Preserve business history over time | [Stock movements and historical data snapshots](docs/data-model.md) |
+| Verify implementation quality | Type checks, unit tests, PostgreSQL integration tests and the CI workflow |
+
+**How to evaluate the code:** `npm install && npm run typecheck && npm test`. For concurrent database scenarios, start PostgreSQL using `docker compose -f compose.test.yaml up -d --wait`, then run `npm run test:postgres` with `STOCKOO_TEST_DATABASE_URL` configured as below.
+
+**Related project:** [PropBet](https://github.com/Aaronn765/Propbet-Public-version), with transactional account operations, idempotent APIs and auditable ledger entries.
+
+**Scope:** the repository contains an isolated technical demonstration with synthetic data, not the complete private production application.
+
+---
+
+
 ## Product overview
 
 Stockoo is built around a simple operational problem: a business needs to know what it owns, what it sold, what it purchased, who performed each operation and what happened to its stock and cash.
